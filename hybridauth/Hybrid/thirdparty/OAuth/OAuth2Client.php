@@ -19,6 +19,10 @@ class OAuth2Client
 	public $redirect_uri     = "" ;
 	public $access_token     = "" ;
 	public $refresh_token    = "" ;
+    public $uid              = "" ; // sina weibo
+    public $openid           = "" ; // tencent weibo
+    public $taobao_user_id   = "" ; // taobao user id
+    public $taobao_user_nick = "" ; // taobao user nick
 
 	public $access_token_expires_in = "" ;
 	public $access_token_expires_at = "" ;
@@ -33,7 +37,7 @@ class OAuth2Client
 	public $curl_header              = array();
 	public $curl_useragent           = "OAuth/2 Simple PHP Client v0.1; HybridAuth http://hybridauth.sourceforge.net/";
 	public $curl_authenticate_method = "POST";
-        public $curl_proxy               = null;
+    public $curl_proxy               = null;
 
 	//--
 
@@ -42,11 +46,12 @@ class OAuth2Client
 
 	//--
 
-	public function __construct( $client_id = false, $client_secret = false, $redirect_uri='' )
+	public function __construct( $client_id = false, $client_secret = false, $redirect_uri = '', $auth_method)
 	{
 		$this->client_id     = $client_id;
 		$this->client_secret = $client_secret; 
 		$this->redirect_uri  = $redirect_uri; 
+        $this->curl_authenticate_method = $auth_method;
 	}
 
 	public function authorizeUrl( $extras = array() )
@@ -82,9 +87,13 @@ class OAuth2Client
 			throw new Exception( "The Authorization Service has return: " . $response->error );
 		}
 
-		if( isset( $response->access_token  ) )  $this->access_token           = $response->access_token;
-		if( isset( $response->refresh_token ) ) $this->refresh_token           = $response->refresh_token; 
-		if( isset( $response->expires_in    ) ) $this->access_token_expires_in = $response->expires_in; 
+		if( isset( $response->access_token      ) ) $this->access_token            = $response->access_token;
+		if( isset( $response->refresh_token     ) ) $this->refresh_token           = $response->refresh_token; 
+		if( isset( $response->expires_in        ) ) $this->access_token_expires_in = $response->expires_in; 
+        if( isset( $response->uid               ) ) $this->uid                     = $response->uid; 
+        if( isset( $response->openid            ) ) $this->openid                  = $response->openid; 
+        if( isset( $response->taobao_user_id    ) ) $this->taobao_user_id          = $response->taobao_user_id; 
+        if( isset( $response->taobao_user_nick  ) ) $this->taobao_user_nick        = $response->taobao_user_nick; 
 		
 		// calculate when the access token expire
 		if( isset($response->expires_in)) {
@@ -131,17 +140,27 @@ class OAuth2Client
 		}
 
 		$parameters[$this->sign_token_name] = $this->access_token;
+        
+        if ($this->uid) $parameters['uid'] = $this->uid;
+        if ($this->openid) $parameters['openid'] = $this->openid;
+        
 		$response = null;
 
 		switch( $method ){
 			case 'GET'  : $response = $this->request( $url, $parameters, "GET"  ); break; 
 			case 'POST' : $response = $this->request( $url, $parameters, "POST" ); break;
 		}
+        
+        // QQzone在获取openid时，返回的数据不是标准的json
+        if (preg_match('/^callback/', $response)) {
+            preg_match('/\{[^\}]*\}/', $response, $matches);
+            $response = $matches[0];
+        } 
 
-		if( $response && $this->decode_json ){
-			$response = json_decode( $response ); 
+		if ($this->decode_json) {
+			$response = json_decode($response); 
 		}
-
+        
 		return $response; 
 	}
 
@@ -190,12 +209,12 @@ class OAuth2Client
 
 	private function request( $url, $params=false, $type="GET" )
 	{
-		Hybrid_Logger::info( "Enter OAuth2Client::request( $url )" );
-		Hybrid_Logger::debug( "OAuth2Client::request(). dump request params: ", serialize( $params ) );
+		Hybrid_Logger::info( "Enter OAuth2Client::request( $type $url )" );
+		Hybrid_Logger::debug( "OAuth2Client::request(). dump request params: ", print_r($params, true) );
 
-		if( $type == "GET" ){
+		//if( $type == "GET" ){
 			$url = $url . ( strpos( $url, '?' ) ? '&' : '?' ) . http_build_query( $params );
-		}
+		//}
 
 		$this->http_info = array();
 		$ch = curl_init();
@@ -218,8 +237,8 @@ class OAuth2Client
 		}
 
 		$response = curl_exec($ch);
-		Hybrid_Logger::debug( "OAuth2Client::request(). dump request info: ", serialize( curl_getinfo($ch) ) );
-		Hybrid_Logger::debug( "OAuth2Client::request(). dump request result: ", serialize( $response ) );
+		Hybrid_Logger::debug( "OAuth2Client::request(). dump request info: ", print_r(curl_getinfo($ch), true) );
+		Hybrid_Logger::debug( "OAuth2Client::request(). dump request result: ", print_r($response, true) );
 
 		$this->http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		$this->http_info = array_merge($this->http_info, curl_getinfo($ch));

@@ -66,7 +66,8 @@ class Hybrid_Provider_Model_OAuth2 extends Hybrid_Provider_Model
 		require_once Hybrid_Auth::$config["path_libraries"] . "OAuth/OAuth2Client.php";
 
 		// create a new OAuth2 client instance
-		$this->api = new OAuth2Client( $this->config["keys"]["id"], $this->config["keys"]["secret"], $this->endpoint );
+        $auth_method = isset($this->config['auth_method']) ? $this->config['auth_method'] : 'POST';
+		$this->api = new OAuth2Client($this->config["keys"]["id"], $this->config["keys"]["secret"], $this->endpoint, $auth_method);
 
 		// If we have an access token, set it
 		if( $this->token( "access_token" ) ){
@@ -74,6 +75,10 @@ class Hybrid_Provider_Model_OAuth2 extends Hybrid_Provider_Model
 			$this->api->refresh_token           = $this->token( "refresh_token" );
 			$this->api->access_token_expires_in = $this->token( "expires_in" );
 			$this->api->access_token_expires_at = $this->token( "expires_at" ); 
+            $this->api->uid                     = $this->token( "uid");
+            $this->api->openid                  = $this->token( "openid");
+            $this->api->taobao_user_id          = $this->token( "taobao_user_id");
+            $this->api->taobao_user_nick        = $this->token( "taobao_user_nick");
 		}
 
 		// Set curl proxy if exist
@@ -123,10 +128,14 @@ class Hybrid_Provider_Model_OAuth2 extends Hybrid_Provider_Model
 		}
 
 		// store tokens
-		$this->token( "access_token" , $this->api->access_token  );
-		$this->token( "refresh_token", $this->api->refresh_token );
-		$this->token( "expires_in"   , $this->api->access_token_expires_in );
-		$this->token( "expires_at"   , $this->api->access_token_expires_at );
+		$this->token( "access_token"     , $this->api->access_token  );
+		$this->token( "refresh_token"    , $this->api->refresh_token );
+		$this->token( "expires_in"       , $this->api->access_token_expires_in );
+		$this->token( "expires_at"       , $this->api->access_token_expires_at );
+        $this->token( "uid"              , $this->api->uid);
+        $this->token( "openid"           , $this->api->openid);
+        $this->token( "taobao_user_id"   , $this->api->taobao_user_id);
+        $this->token( "taobao_user_nick" , $this->api->taobao_user_nick);
 
 		// set user connected locally
 		$this->setUserConnected();
@@ -167,10 +176,14 @@ class Hybrid_Provider_Model_OAuth2 extends Hybrid_Provider_Model
 			}
 
 			// re store tokens
-			$this->token( "access_token" , $this->api->access_token  );
-			$this->token( "refresh_token", $this->api->refresh_token );
-			$this->token( "expires_in"   , $this->api->access_token_expires_in );
-			$this->token( "expires_at"   , $this->api->access_token_expires_at );
+			$this->token("access_token"    , $this->api->access_token  );
+			$this->token("refresh_token"   , $this->api->refresh_token );
+			$this->token("expires_in"      , $this->api->access_token_expires_in );
+			$this->token("expires_at"      , $this->api->access_token_expires_at );
+            $this->token("uid"             , $this->api->uid);
+            $this->token("openid"          , $this->api->openid);
+            $this->token("taobao_user_id"  , $this->api->taobao_user_id);
+            $this->token("taobao_user_nick", $this->api->taobao_user_nick);
 		}
 	}
 }
