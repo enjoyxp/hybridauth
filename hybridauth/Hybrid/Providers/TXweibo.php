@@ -29,7 +29,8 @@ class Hybrid_Providers_TXweibo extends Hybrid_Provider_Model_OAuth2 {
         $this->user->profile->birthMonth  = (int)$data->birth_month;
         $this->user->profile->birthYear   = (int)$data->birth_year;
         $this->user->profile->address     = $data->location;
-        $this->user->profile->displayName = $data->name;
+        $this->user->profile->displayName = $data->nick ?: $data->name;
+        $this->user->profile->profileURL  = sprintf('http://t.qq.com/%s', $data->name);
         $this->user->profile->firstName   = $data->nick;
         $this->user->profile->gender      = $data->sex;
         

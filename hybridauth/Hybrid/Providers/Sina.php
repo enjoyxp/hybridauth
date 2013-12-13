@@ -19,6 +19,7 @@ class Hybrid_Providers_Sina extends Hybrid_Provider_Model_OAuth2 {
 
         $this->user->profile->identifier  = $data->id;
 		$this->user->profile->displayName = $data->screen_name;
+        $this->user->profile->profileURL  = sprintf('http://www.weibo.com/%s', $data->profile_url);
         $this->user->profile->gender      = $data->gender;
         $this->user->profile->address     = $data->location;
         
